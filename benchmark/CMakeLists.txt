@@ -1,4 +1,4 @@
-# Copyright (C) 2021 by the INTELLI team (https://github.com/intellistream)
+# Copyright (C) 2021 by the INTELLI team (https://github.com/CpuModulation)
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ if (BUILD_BENCHMARKS)
     include_directories("${source_dir}/include/")
     include_directories("include/")
     add_executable(benchmark "src/Benchmark.cpp")
-    target_link_libraries(benchmark IntelliStream)
+    target_link_libraries(benchmark CpuModulation)
 
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/datasets
             DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

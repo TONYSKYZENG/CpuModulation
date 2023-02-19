@@ -1,4 +1,4 @@
-# ModernCPlusProjectTemplate [![CMake](https://github.com/intellistream/ModernCPlusProjectTemplate/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/intellistream/ModernCPlusProjectTemplate/actions/workflows/cmake.yml)
+# ModernCPlusProjectTemplate [![CMake](https://github.com/CpuModulation/ModernCPlusProjectTemplate/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/CpuModulation/ModernCPlusProjectTemplate/actions/workflows/cmake.yml)
 
 Template for C++ 20 project; using CMAKE to manage
 
@@ -25,7 +25,7 @@ sudo apt-get install -y liblog4cxx-dev
 - test -- test code based on google test
 
 ## How to start?
-- Please rename IntelliStream to your desired project name.
+- Please rename CpuModulation to your desired project name.
 - Implement your core function code in src and include folders.
 - Implement your application code in benchmark folder.
 - Implement your test code in test folder.
