@@ -32,7 +32,7 @@ int main(int argc,char *argv[]) {
   std::printf("len=%ld us,frequency=%lf Hz,full run=%ld us,empty run=%ld us\r\n",len,f,tFull,tEmpty);
   cm.setRunLength(len);
   cm.setDuty(tFull,tEmpty);
-  cm.setUpWorkers( std::thread::hardware_concurrency());
+  cm.setUpWorkers( std::thread::hardware_concurrency()/2);
   cm.runModulation();
   return 0;
 }

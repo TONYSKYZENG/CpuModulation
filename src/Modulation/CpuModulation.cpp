@@ -10,7 +10,9 @@
 #include<time.h>
 #include <Utils/UtilityFunctions.hpp>
 #include <chrono>
+#include <pthread.h>
 namespace CM {
+pthread_barrier_t barrierFirst,barrierSecond;
 void ModulatedWorkers::inlineCoreBind(int cpuId) {
   cpu_set_t mask;
   if(cpuId<0)
@@ -24,16 +26,12 @@ void ModulatedWorkers::inlineCoreBind(int cpuId) {
   }
   return;
 }
-void ModulatedWorkers::dummyFunction(uint64_t k) {
-  uint64_t ru=0;
-  for(uint32_t i=0;i<100;i++)
+void ModulatedWorkers::dummyFunction() {
+  inCnt++;
+  inCnt2+=inCnt;
+  if(inCnt%100)
   {
-    ru=i;
-    for(uint64_t j=0;j<k;j++)
-    {
-      ru+=j;
-    }
-    dummyArrary[i]=ru;
+    dummyArrary[inCnt2%8192]=inCnt2;
   }
 
 }
@@ -43,29 +41,26 @@ void ModulatedWorkers::inlineMain() {
   assert(controlInfo);
   inlineCoreBind(myCore);
   printf("bind to core %d\r\n",myCore);
- //. uint64_t k=0;
   while (1)
-  { if(controlInfo->markState==0)
+  { if(controlInfo->stopState==1)
     {
     std::printf("exit core %d\r\n",myCore);
       return;
     }
-
-    bar1p->arrive_and_wait();
-    auto start = std::chrono::high_resolution_clock::now();
-    // 取指执行的时间为 10000 μs
-    while(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() < fullLengthUs) ;
-    usleep(emptyLengthUs);
-    bar2p->arrive_and_wait();
-
-
-
+    pthread_barrier_wait(&barrierFirst);
+    while (controlInfo->markState==1)
+    {
+    dummyFunction();
+    }
+    pthread_barrier_wait(&barrierSecond);
   }
 }
 void CpuModulation::setUpWorkers(int wks) {
   myWorkers=vector<ModulatedWorkersPtr>(wks);
-  bar1p=std::make_shared<std::barrier<>>(wks);
-  bar2p=std::make_shared<std::barrier<>>(wks);
+  bar1p=std::make_shared<std::barrier<>>(wks+1);
+  bar2p=std::make_shared<std::barrier<>>(wks+1);
+  pthread_barrier_init(&barrierFirst, NULL, wks+1);
+  pthread_barrier_init(&barrierSecond, NULL, wks+1);
   controlInfo=newModulationControlInfo();
   for(size_t i=0;i<wks;i++)
   {
@@ -80,6 +75,7 @@ void CpuModulation::runModulation() {
 
   size_t wks=myWorkers.size();
   controlInfo->markState=1;
+  controlInfo->stopState=0;
   for(size_t i=0;i<wks;i++)
   {
     myWorkers[i]->setDuty(fullLengthUs,emptyLengthUs);
@@ -91,9 +87,31 @@ void CpuModulation::runModulation() {
   // thrust to run
   std::printf("modulation start:%ld+%ld=%ld\r\n",fullLengthUs,emptyLengthUs,periodUs);
   gettimeofday(&ts, NULL);
-  usleep(runLengthUs);
+  while(UtilityFunctions::timeLastUs(ts)<runLengthUs&&controlInfo->markState>0)
+  {
+    controlInfo->markState=1;
+    pthread_barrier_wait(&barrierFirst);
+    // bar1p->arrive_and_wait();
+    while(UtilityFunctions::timeLastUs(ts)%periodUs<fullLengthUs);
+    controlInfo->markState=2;
+    if(UtilityFunctions::timeLastUs(ts)+emptyLengthUs>=runLengthUs)
+    {
+      controlInfo->stopState=1;
+       std::printf("main thread should stop\r\n");
+      // break;
+    }
+    pthread_barrier_wait(&barrierSecond);
+     //bar2p->arrive_and_wait();
+    while(UtilityFunctions::timeLastUs(ts)%periodUs>=fullLengthUs);
+    if(UtilityFunctions::timeLastUs(ts)>=runLengthUs)
+    {
+      controlInfo->markState=0;
+      std::printf("main thread done\r\n");
+    }
+  }
+  //usleep(runLengthUs);
   std::printf("modulation done\r\n");
-  controlInfo->markState=0;
+  //controlInfo->markState=0;
   for(size_t i=0;i<wks;i++)
   {
     myWorkers[i]->joinThread();

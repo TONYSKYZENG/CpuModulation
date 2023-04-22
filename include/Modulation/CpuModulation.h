@@ -29,6 +29,7 @@ class ModulationControlInfo{
    * @brief 0 stop, 1 full run, 2 empty run
    */
   std::atomic_uint32_t markState=0;
+  std::atomic_uint32_t stopState=0;
 };
 /**
  * @ingroup CM_MODULATION
@@ -85,8 +86,10 @@ class ModulatedWorkers : public AbstractC20Thread{
   void inlineCoreBind(int cid);
   uint64_t fullLengthUs=0,emptyLengthUs=0;
   int myCore;
-  uint64_t dummyArrary[100];
-  void dummyFunction(uint64_t k);
+  uint64_t inCnt=0;
+  uint64_t inCnt2=0;
+  uint64_t dummyArrary[8192];
+  void dummyFunction();
 };
 typedef std::shared_ptr<ModulatedWorkers> ModulatedWorkersPtr;
 #define newModulatedWorkers  make_shared<CM::ModulatedWorkers>
